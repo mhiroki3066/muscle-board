@@ -1,12 +1,10 @@
 // ============================================================
-//  PUMP LOG — app.js
-//  シンプルで確実に動くコード。バグゼロを目指して完全書き直し。
+//  PUMP LOG — app.js（バグ修正版）
 // ============================================================
 
 const { createClient } = supabase;
 const db = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// ===== 状態 =====
 let posts         = [];
 let currentFilter = 'すべて';
 let openPostId    = null;
@@ -23,10 +21,7 @@ async function fetchPosts() {
 
   const { data, error } = await db
     .from('posts')
-    .select(`
-      id, name, category, body, likes, created_at,
-      comments ( count )
-    `)
+    .select('id, name, category, body, likes, created_at, comments(count)')
     .order('created_at', { ascending: false });
 
   setLoading(false);
@@ -45,28 +40,28 @@ async function fetchPosts() {
 // ===== リアルタイム購読 =====
 function listenRealtime() {
   db.channel('posts-channel')
-    .on(
-      'postgres_changes',
-      { event: '*', schema: 'public', table: 'posts' },
-      () => fetchPosts()   // 変更があったら必ず再取得
-    )
+    .on('postgres_changes', { event: '*', schema: 'public', table: 'posts' }, () => {
+      fetchPosts();
+    })
     .subscribe();
 }
 
 // ===== 投稿する =====
 async function submitPost() {
-  const name  = val('input-name')  || '匿名';
-  const cat   = val('input-category');
-  const body  = val('input-body');
+  // ★修正: selectはvalue直接取得、trim()はtextareaのみ
+  const name = document.getElementById('input-name').value.trim() || '匿名';
+  const cat  = document.getElementById('input-category').value;
+  const body = document.getElementById('input-body').value.trim();
 
-  if (!body.trim()) { toast('📝 トレーニング内容を入力してください'); return; }
+  if (!body) { toast('📝 トレーニング内容を入力してください'); return; }
 
   const btn = document.getElementById('submit-btn');
   btn.disabled = true;
   btn.textContent = '投稿中... 🚀';
 
-  const { error } = await db.from('posts').insert({ name, category: cat, body: body.trim() });
+  const { error } = await db.from('posts').insert({ name, category: cat, body });
 
+  // ★修正: 成功・失敗どちらでも必ずボタンを戻す
   btn.disabled = false;
   btn.textContent = '投稿する 🚀';
 
@@ -78,33 +73,28 @@ async function submitPost() {
 
   document.getElementById('input-body').value = '';
   toast('💪 投稿しました！');
-  // リアルタイム購読が fetchPosts() を呼ぶので手動更新は不要
+
+  // ★修正: リアルタイムに頼らず必ず手動で再取得
+  await fetchPosts();
 }
 
 // ===== いいねする =====
 async function toggleLike(postId, currentLikes, btn) {
-  const liked     = btn.classList.contains('liked');
-  const newLikes  = liked ? Math.max(0, currentLikes - 1) : currentLikes + 1;
+  const liked    = btn.classList.contains('liked');
+  const newLikes = liked ? Math.max(0, currentLikes - 1) : currentLikes + 1;
 
-  // ローカルで即時反映
   btn.classList.toggle('liked');
   btn.textContent = liked
-    ? `🤍 いいね ${newLikes > 0 ? newLikes : ''}`
+    ? `🤍 いいね${newLikes > 0 ? ' ' + newLikes : ''}`
     : `❤️ いいね ${newLikes}`;
 
-  const { error } = await db
-    .from('posts')
-    .update({ likes: newLikes })
-    .eq('id', postId);
+  const { error } = await db.from('posts').update({ likes: newLikes }).eq('id', postId);
 
   if (error) {
-    // 失敗したら元に戻す
     btn.classList.toggle('liked');
-    const post = posts.find(p => p.id === postId);
-    btn.textContent = `🤍 いいね ${currentLikes > 0 ? currentLikes : ''}`;
+    btn.textContent = `🤍 いいね${currentLikes > 0 ? ' ' + currentLikes : ''}`;
     toast('❌ いいねに失敗しました');
   } else {
-    // 成功したらローカルデータも更新
     const post = posts.find(p => p.id === postId);
     if (post) post.likes = newLikes;
   }
@@ -123,10 +113,10 @@ async function deletePost(postId) {
   }
 
   toast('🗑️ 削除しました');
-  // リアルタイム購読が fetchPosts() を呼ぶので自動更新
+  await fetchPosts();
 }
 
-// ===== コメントモーダルを開く =====
+// ===== コメントモーダル =====
 async function openModal(postId) {
   openPostId = postId;
   document.getElementById('modal').style.display = 'flex';
@@ -143,7 +133,6 @@ function handleModalBgClick(e) {
   if (e.target === document.getElementById('modal')) closeModal();
 }
 
-// ===== コメント一覧を取得 =====
 async function fetchComments(postId) {
   const list = document.getElementById('modal-list');
   list.innerHTML = '<p class="no-cm">⏳ 読み込み中...</p>';
@@ -177,24 +166,19 @@ async function fetchComments(postId) {
   list.scrollTop = list.scrollHeight;
 }
 
-// ===== コメントを送信 =====
 async function sendComment() {
   if (!openPostId) return;
 
-  const name = val('cm-name') || '匿名';
-  const body = val('cm-body');
+  const name = document.getElementById('cm-name').value.trim() || '匿名';
+  const body = document.getElementById('cm-body').value.trim();
 
-  if (!body.trim()) { toast('📝 コメントを入力してください'); return; }
+  if (!body) { toast('📝 コメントを入力してください'); return; }
 
   const btn = document.querySelector('.modal-send');
   btn.disabled = true;
   btn.textContent = '送信中...';
 
-  const { error } = await db.from('comments').insert({
-    post_id: openPostId,
-    name,
-    body: body.trim()
-  });
+  const { error } = await db.from('comments').insert({ post_id: openPostId, name, body });
 
   btn.disabled = false;
   btn.textContent = '送信 ✉️';
@@ -208,7 +192,6 @@ async function sendComment() {
   document.getElementById('cm-body').value = '';
   await fetchComments(openPostId);
 
-  // コメント数をローカルで更新して再描画
   const post = posts.find(p => p.id === openPostId);
   if (post?.comments?.[0]) {
     post.comments[0].count++;
@@ -242,9 +225,8 @@ function renderFeed() {
   empty.style.display = 'none';
 
   feed.innerHTML = visible.map(p => {
-    const likes    = p.likes ?? 0;
-    const cmCount  = p.comments?.[0]?.count ?? 0;
-
+    const likes   = p.likes ?? 0;
+    const cmCount = p.comments?.[0]?.count ?? 0;
     return `
       <div class="post-card" data-cat="${esc(p.category)}">
         <div class="card-top">
@@ -257,12 +239,11 @@ function renderFeed() {
         </div>
         <div class="card-body">${esc(p.body)}</div>
         <div class="card-actions">
-          <button
-            class="act-btn like-btn ${likes > 0 ? '' : ''}"
-            onclick="toggleLike('${p.id}', ${likes}, this)"
-          >🤍 いいね ${likes > 0 ? likes : ''}</button>
+          <button class="act-btn like-btn" onclick="toggleLike('${p.id}', ${likes}, this)">
+            🤍 いいね${likes > 0 ? ' ' + likes : ''}
+          </button>
           <button class="act-btn" onclick="openModal('${p.id}')">
-            💬 コメント ${cmCount > 0 ? cmCount : ''}
+            💬 コメント${cmCount > 0 ? ' ' + cmCount : ''}
           </button>
           <button class="act-btn delete-btn" onclick="deletePost('${p.id}')">🗑️</button>
         </div>
@@ -279,10 +260,6 @@ function updateCount() {
 function setLoading(show) {
   document.getElementById('loading').style.display = show ? 'block' : 'none';
   if (show) document.getElementById('empty').style.display = 'none';
-}
-
-function val(id) {
-  return document.getElementById(id)?.value?.trim() ?? '';
 }
 
 function initials(name) {
