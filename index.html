@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>筋トレ掲示板 💪</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@400;500;700&family=Bebas+Neue&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <header class="site-header">
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-icon">💪</span>
+        <span class="logo-text">MUSCLE<br>BOARD</span>
+      </div>
+      <div class="header-stats" id="header-stats">
+        <span class="stat-item"><span class="stat-num" id="total-posts">0</span> 件の報告</span>
+      </div>
+    </div>
+  </header>
+
+  <main class="main-layout">
+
+    <!-- 投稿フォーム -->
+    <section class="post-form-section">
+      <h2 class="section-title">今日のトレーニングを報告</h2>
+      <div class="post-form-card">
+        <div class="form-row">
+          <div class="form-group">
+            <label for="input-name">ニックネーム</label>
+            <input type="text" id="input-name" placeholder="省略すると匿名" maxlength="20">
+          </div>
+          <div class="form-group">
+            <label for="input-category">カテゴリ</label>
+            <select id="input-category">
+              <option value="胸">胸</option>
+              <option value="背中">背中</option>
+              <option value="脚">脚</option>
+              <option value="肩">肩</option>
+              <option value="腕">腕</option>
+              <option value="全身">全身</option>
+              <option value="有酸素">有酸素</option>
+              <option value="その他">その他</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group">
+          <label for="input-body">トレーニング内容</label>
+          <textarea id="input-body" placeholder="例: ベンチプレス 60kg × 10回 × 3セット。今日はPR更新できた！" rows="3"></textarea>
+        </div>
+        <button class="submit-btn" id="submit-btn" onclick="submitPost()">
+          <span class="btn-text">投稿する</span>
+          <span class="btn-icon">→</span>
+        </button>
+      </div>
+    </section>
+
+    <!-- フィード -->
+    <section class="feed-section">
+      <div class="feed-header">
+        <h2 class="section-title">みんなの報告</h2>
+        <div class="filter-tabs" id="filter-tabs">
+          <button class="filter-tab active" data-cat="すべて" onclick="filterPosts('すべて', this)">すべて</button>
+          <button class="filter-tab" data-cat="胸" onclick="filterPosts('胸', this)">胸</button>
+          <button class="filter-tab" data-cat="背中" onclick="filterPosts('背中', this)">背中</button>
+          <button class="filter-tab" data-cat="脚" onclick="filterPosts('脚', this)">脚</button>
+          <button class="filter-tab" data-cat="肩" onclick="filterPosts('肩', this)">肩</button>
+          <button class="filter-tab" data-cat="腕" onclick="filterPosts('腕', this)">腕</button>
+          <button class="filter-tab" data-cat="全身" onclick="filterPosts('全身', this)">全身</button>
+          <button class="filter-tab" data-cat="有酸素" onclick="filterPosts('有酸素', this)">有酸素</button>
+        </div>
+      </div>
+      <div id="feed-list"></div>
+      <div id="loading" class="loading-state">読み込み中...</div>
+      <div id="empty-state" class="empty-state" style="display:none">
+        <p class="empty-icon">🏋️</p>
+        <p>まだ投稿がありません。<br>最初の報告をしよう！</p>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- コメントモーダル -->
+  <div id="comment-modal" class="modal-overlay" style="display:none" onclick="closeCommentModal(event)">
+    <div class="modal-card">
+      <div class="modal-header">
+        <h3 class="modal-title">コメント</h3>
+        <button class="modal-close" onclick="closeCommentModal()">✕</button>
+      </div>
+      <div id="modal-comments-list" class="modal-comments-list"></div>
+      <div class="modal-comment-form">
+        <input type="text" id="modal-comment-name" placeholder="ニックネーム（省略可）" maxlength="20">
+        <textarea id="modal-comment-text" placeholder="コメントを入力..." rows="2" maxlength="300"></textarea>
+        <button class="modal-send-btn" onclick="sendComment()">送信</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Supabase SDK -->
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
