@@ -1,6 +1,11 @@
 -- =============================================
---  Supabase SQL Editor にこれをそのまま貼って実行
+--  PUMP LOG — Supabase SQL Editor に貼って実行
+--  ※ 前のテーブルが残っている場合は先に削除してから実行
 -- =============================================
+
+-- 古いテーブルを削除（前のバージョンから移行する場合）
+drop table if exists comments;
+drop table if exists posts;
 
 -- 投稿テーブル
 create table posts (
@@ -8,7 +13,7 @@ create table posts (
   name       text not null default '匿名',
   category   text not null default 'その他',
   body       text not null,
-  cheers     integer not null default 0,
+  likes      integer not null default 0,
   created_at timestamptz not null default now()
 );
 
@@ -21,16 +26,17 @@ create table comments (
   created_at timestamptz not null default now()
 );
 
--- 誰でも読み書きできるようにする（匿名掲示板なので）
-alter table posts   enable row level security;
+-- セキュリティポリシー（誰でも読み書きOK）
+alter table posts    enable row level security;
 alter table comments enable row level security;
 
-create policy "誰でも投稿を読める"  on posts    for select using (true);
-create policy "誰でも投稿を作れる"  on posts    for insert with check (true);
-create policy "誰でも投稿を更新できる" on posts  for update using (true);
+create policy "posts_select"  on posts    for select using (true);
+create policy "posts_insert"  on posts    for insert with check (true);
+create policy "posts_update"  on posts    for update using (true);
+create policy "posts_delete"  on posts    for delete using (true);
 
-create policy "誰でもコメントを読める" on comments for select using (true);
-create policy "誰でもコメントを作れる" on comments for insert with check (true);
+create policy "comments_select" on comments for select using (true);
+create policy "comments_insert" on comments for insert with check (true);
 
--- リアルタイム通知を有効化
+-- リアルタイム有効化
 alter publication supabase_realtime add table posts;

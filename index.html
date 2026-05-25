@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PUMP LOG 💪 筋トレ報告掲示板</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Dela+Gothic+One&family=Noto+Sans+JP:wght@400;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+
+  <!-- ヘッダー -->
+  <header class="header">
+    <div class="header-inner">
+      <div class="logo">
+        <span class="logo-emoji">💪</span>
+        <span class="logo-text">PUMP LOG</span>
+        <span class="logo-sub">筋トレ報告板</span>
+      </div>
+      <div class="header-count">
+        <span id="total-count">0</span>件の報告
+      </div>
+    </div>
+  </header>
+
+  <main class="container">
+
+    <!-- 投稿フォーム -->
+    <section class="form-section">
+      <div class="form-card">
+        <h2 class="form-title">📝 今日のトレーニングを報告！</h2>
+        <div class="form-row">
+          <div class="field">
+            <label class="field-label">ニックネーム</label>
+            <input class="field-input" id="input-name" type="text" placeholder="省略すると匿名" maxlength="20">
+          </div>
+          <div class="field">
+            <label class="field-label">カテゴリ</label>
+            <select class="field-input field-select" id="input-category">
+              <option value="胸">💪 胸</option>
+              <option value="背中">🏋️ 背中</option>
+              <option value="脚">🦵 脚</option>
+              <option value="肩">🙆 肩</option>
+              <option value="腕">💥 腕</option>
+              <option value="全身">🔥 全身</option>
+              <option value="有酸素">🏃 有酸素</option>
+              <option value="その他">✨ その他</option>
+            </select>
+          </div>
+        </div>
+        <div class="field">
+          <label class="field-label">トレーニング内容</label>
+          <textarea class="field-input field-textarea" id="input-body" placeholder="例：ベンチプレス 60kg × 10回 × 3セット&#10;インクラインダンベル 20kg × 12回 × 3セット&#10;今日はPR更新できた！🔥" rows="4"></textarea>
+        </div>
+        <button class="submit-btn" id="submit-btn" onclick="submitPost()">
+          投稿する 🚀
+        </button>
+      </div>
+    </section>
+
+    <!-- フィルター -->
+    <div class="filter-wrap">
+      <div class="filter-scroll">
+        <button class="filter-btn active" onclick="setFilter('すべて', this)">🏆 すべて</button>
+        <button class="filter-btn" onclick="setFilter('胸', this)">💪 胸</button>
+        <button class="filter-btn" onclick="setFilter('背中', this)">🏋️ 背中</button>
+        <button class="filter-btn" onclick="setFilter('脚', this)">🦵 脚</button>
+        <button class="filter-btn" onclick="setFilter('肩', this)">🙆 肩</button>
+        <button class="filter-btn" onclick="setFilter('腕', this)">💥 腕</button>
+        <button class="filter-btn" onclick="setFilter('全身', this)">🔥 全身</button>
+        <button class="filter-btn" onclick="setFilter('有酸素', this)">🏃 有酸素</button>
+      </div>
+    </div>
+
+    <!-- 投稿一覧 -->
+    <section id="feed" class="feed"></section>
+    <div id="loading" class="state-msg">⏳ 読み込み中...</div>
+    <div id="empty" class="state-msg" style="display:none">
+      <div class="empty-icon">🏋️</div>
+      <div>まだ投稿がありません<br>最初の報告をしよう！</div>
+    </div>
+
+  </main>
+
+  <!-- コメントモーダル -->
+  <div id="modal" class="modal-bg" style="display:none" onclick="handleModalBgClick(event)">
+    <div class="modal-box">
+      <div class="modal-head">
+        <span class="modal-title">💬 コメント</span>
+        <button class="modal-close" onclick="closeModal()">✕</button>
+      </div>
+      <div id="modal-list" class="modal-list"></div>
+      <div class="modal-form">
+        <input class="modal-input" id="cm-name" type="text" placeholder="ニックネーム（省略可）" maxlength="20">
+        <textarea class="modal-input modal-textarea" id="cm-body" placeholder="コメントを入力..." rows="2" maxlength="200"></textarea>
+        <button class="modal-send" onclick="sendComment()">送信 ✉️</button>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="js/config.js"></script>
+  <script src="js/app.js"></script>
+</body>
+</html>
